@@ -5,6 +5,7 @@ import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
@@ -26,6 +27,11 @@ public class MainActivity extends Activity {
      * Our magnificent back-camera
      */
     private Camera frontCamera;
+
+    /**
+     * Current active camera
+     */
+    private Camera activeCamera;
 
     /**
      * The view we display our camera information on
@@ -63,6 +69,7 @@ public class MainActivity extends Activity {
      * Initialize everything
      */
     protected void initialize() {
+        Log.d("MainActivity", "Initializing");
         // Set the window to support translucency
         getWindow().setFormat(PixelFormat.TRANSLUCENT);
 
@@ -71,6 +78,13 @@ public class MainActivity extends Activity {
 
         surfaceHolderCamera = surfaceViewCamera.getHolder();
 
+        try{
+            surfaceHolderCamera.addCallback(new HolderCallback());
+        }catch(Throwable e){
+            Log.getStackTraceString(e);
+        }
+
+        Log.d("MainActivity", "Initialization completed");
     }
 
     @Override
@@ -95,28 +109,60 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Finds the id of the camera facing FRONT.
+     *
+     * @return The id of the camera, or -1 if not found.
+     */
+    public int findFrontCamera(){
+        return 0;
+    }
+
+    /**
+     * Finds the id of the camera facing BACK.
+     *
+     * @return The id of the camera, or -1 if not found.
+     */
+    public int findBackCamera(){
+        return 0;
+    }
+
+    /**
+     * Safely opens a camera.
+     * @param id The id of the camera
+     * @return True if camera was opened succesfully. False if an error occured.
+     */
+    public boolean openCamera(int id){
+        return true;
+    }
+
+    /**
+     * Callback for our CameraViewSurface.Holder
+     * Sets up and handles camera stuff
+     */
     private class HolderCallback implements SurfaceHolder.Callback{
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
             try {
-                frontCamera = Camera.open();
-                frontCamera.setDisplayOrientation(90);
-                frontCamera.setPreviewDisplay(holder);
+                activeCamera = Camera.open();
+                //activeCamera.setDisplayOrientation(90);
+                activeCamera.setPreviewDisplay(holder);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
 
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
+            activeCamera.startPreview();
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-
+            activeCamera.stopPreview();
+            activeCamera.release();
+            activeCamera = null;
         }
     }
 }
